@@ -3,6 +3,57 @@ import { Navigation } from '../components/Navigation';
 import { ServiceCard } from '../components/ServiceCard';
 import { Footer } from '../components/Footer';
 import { useScrollProgress } from '../hooks/useScrollProgress';
+import { useState, useEffect, useRef } from 'react';
+
+const AnimatedSection = ({ 
+  children, 
+  startProgress, 
+  endProgress, 
+  scrollProgress 
+}: { 
+  children: React.ReactNode; 
+  startProgress: number; 
+  endProgress: number; 
+  scrollProgress: number;
+}) => {
+  const ref = useRef<HTMLDivElement>(null);
+  
+  // 计算当前进度在这个区间内的位置
+  const getOpacity = () => {
+    if (scrollProgress < startProgress) return 0;
+    if (scrollProgress > endProgress) return 0;
+    
+    const range = endProgress - startProgress;
+    const midPoint = startProgress + range / 2;
+    const fadeRange = range * 0.3;
+    
+    if (scrollProgress < midPoint - fadeRange) {
+      return 0;
+    } else if (scrollProgress < midPoint) {
+      return (scrollProgress - (midPoint - fadeRange)) / fadeRange;
+    } else if (scrollProgress < midPoint + fadeRange) {
+      return 1 - (scrollProgress - midPoint) / fadeRange;
+    } else {
+      return 0;
+    }
+  };
+  
+  const opacity = getOpacity();
+  
+  return (
+    <div
+      ref={ref}
+      className="h-screen flex items-center justify-center"
+      style={{
+        opacity: opacity,
+        transform: `scale(${0.9 + opacity * 0.1})`,
+        transition: 'opacity 0.1s ease-out, transform 0.1s ease-out',
+      }}
+    >
+      {children}
+    </div>
+  );
+};
 
 export default function Home() {
   const scrollProgress = useScrollProgress();
@@ -31,7 +82,7 @@ export default function Home() {
       <GalaxyScene scrollProgress={scrollProgress} />
       <Navigation />
       
-      <section id="hero" className="h-screen flex items-center justify-center">
+      <AnimatedSection startProgress={0} endProgress={0.15} scrollProgress={scrollProgress}>
         <div className="text-center px-6">
           <h1 className="text-6xl md:text-8xl font-bold text-white mb-6 tracking-tight">
             LUNARBYTE
@@ -39,15 +90,10 @@ export default function Home() {
           <p className="text-xl md:text-2xl text-white/70 mb-12 max-w-2xl mx-auto">
             探索无限可能，创造未来科技
           </p>
-          <div className="animate-bounce">
-            <svg className="w-8 h-8 mx-auto text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-            </svg>
-          </div>
         </div>
-      </section>
+      </AnimatedSection>
 
-      <section className="h-screen flex items-center justify-center">
+      <AnimatedSection startProgress={0.1} endProgress={0.3} scrollProgress={scrollProgress}>
         <div className="text-center px-6">
           <h2 className="text-4xl md:text-6xl font-bold text-white mb-8">
             从地球出发
@@ -56,9 +102,9 @@ export default function Home() {
             每一次创新都始于一个想法，我们将您的愿景变为现实
           </p>
         </div>
-      </section>
+      </AnimatedSection>
 
-      <section className="h-screen flex items-center justify-center">
+      <AnimatedSection startProgress={0.25} endProgress={0.45} scrollProgress={scrollProgress}>
         <div className="text-center px-6">
           <h2 className="text-4xl md:text-6xl font-bold text-white mb-8">
             穿越太阳系
@@ -67,9 +113,9 @@ export default function Home() {
             持续探索，不断突破，我们始终走在技术前沿
           </p>
         </div>
-      </section>
+      </AnimatedSection>
 
-      <section className="h-screen flex items-center justify-center">
+      <AnimatedSection startProgress={0.4} endProgress={0.6} scrollProgress={scrollProgress}>
         <div className="text-center px-6">
           <h2 className="text-4xl md:text-6xl font-bold text-white mb-8">
             飞跃银河系
@@ -78,9 +124,20 @@ export default function Home() {
             广阔的技术宇宙中，我们是您可靠的导航者
           </p>
         </div>
-      </section>
+      </AnimatedSection>
 
-      <section id="services" className="min-h-screen flex items-center justify-center py-24">
+      <AnimatedSection startProgress={0.55} endProgress={0.75} scrollProgress={scrollProgress}>
+        <div className="text-center px-6">
+          <h2 className="text-4xl md:text-6xl font-bold text-white mb-8">
+            抵达仙女座
+          </h2>
+          <p className="text-xl text-white/70 max-w-3xl mx-auto">
+            在这里，我们为您准备了超越想象的解决方案
+          </p>
+        </div>
+      </AnimatedSection>
+
+      <AnimatedSection startProgress={0.7} endProgress={0.9} scrollProgress={scrollProgress}>
         <div className="max-w-7xl mx-auto px-6 w-full">
           <h2 className="text-4xl md:text-5xl font-bold text-white text-center mb-16">
             我们的服务
@@ -91,14 +148,14 @@ export default function Home() {
                 key={index}
                 title={service.title}
                 description={service.description}
-                delay={index * 200}
+                delay={index * 100}
               />
             ))}
           </div>
         </div>
-      </section>
+      </AnimatedSection>
 
-      <section id="about" className="min-h-screen flex items-center justify-center py-24">
+      <AnimatedSection startProgress={0.85} endProgress={1} scrollProgress={scrollProgress}>
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-8">
             关于我们
@@ -107,14 +164,13 @@ export default function Home() {
             LunarByte 是一家专注于前沿技术的科技公司。我们汇聚了一群对技术充满热情的专业人才，
             致力于通过创新的解决方案帮助客户实现业务目标。
           </p>
-          <p className="text-xl text-white/70 leading-relaxed">
+          <p className="text-xl text-white/70 leading-relaxed mb-12">
             从软件开发到人工智能，从游戏开发到云服务，我们在多个领域拥有深厚的积累和丰富的经验。
             我们相信，技术的力量可以改变世界，而我们正在为此努力。
           </p>
+          <Footer />
         </div>
-      </section>
-
-      <Footer />
+      </AnimatedSection>
     </div>
   );
 }
