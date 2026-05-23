@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 
 interface GalaxySceneProps {
@@ -16,6 +16,7 @@ export const GalaxyScene: React.FC<GalaxySceneProps> = ({ scrollProgress }) => {
   const planetsRef = useRef<THREE.Group | null>(null);
   const asteroidsRef = useRef<THREE.Group | null>(null);
   const blackHoleRef = useRef<THREE.Group | null>(null);
+  const [hasWebGL, setHasWebGL] = useState(true);
 
   const easeInOutCubic = (t: number): number => {
     return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -37,24 +38,33 @@ export const GalaxyScene: React.FC<GalaxySceneProps> = ({ scrollProgress }) => {
     if (!containerRef.current) return;
 
     const container = containerRef.current;
-    
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000);
-    sceneRef.current = scene;
 
-    const camera = new THREE.PerspectiveCamera(
-      60,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000000
-    );
-    cameraRef.current = camera;
+    // 检测 WebGL 支持
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (!gl) {
+      setHasWebGL(false);
+      return;
+    }
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    container.appendChild(renderer.domElement);
-    rendererRef.current = renderer;
+    try {
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x000000);
+      sceneRef.current = scene;
+
+      const camera = new THREE.PerspectiveCamera(
+        60,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000000
+      );
+      cameraRef.current = camera;
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+      rendererRef.current = renderer;
 
     const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
     scene.add(ambientLight);
@@ -293,30 +303,63 @@ export const GalaxyScene: React.FC<GalaxySceneProps> = ({ scrollProgress }) => {
       }
     };
 
-    animate();
+      animate();
 
-    const handleResize = () => {
-      if (!cameraRef.current || !rendererRef.current) return;
-      cameraRef.current.aspect = window.innerWidth / window.innerHeight;
-      cameraRef.current.updateProjectionMatrix();
-      rendererRef.current.setSize(window.innerWidth, window.innerHeight);
-    };
+      const handleResize = () => {
+        if (!cameraRef.current || !rendererRef.current) return;
+        cameraRef.current.aspect = window.innerWidth / window.innerHeight;
+        cameraRef.current.updateProjectionMatrix();
+        rendererRef.current.setSize(window.innerWidth, window.innerHeight);
+      };
 
-    window.addEventListener('resize', handleResize);
+      window.addEventListener('resize', handleResize);
 
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      if (animationIdRef.current) {
-        cancelAnimationFrame(animationIdRef.current);
-      }
-      if (rendererRef.current) {
-        rendererRef.current.dispose();
-        if (containerRef.current && rendererRef.current.domElement) {
-          containerRef.current.removeChild(rendererRef.current.domElement);
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        if (animationIdRef.current) {
+          cancelAnimationFrame(animationIdRef.current);
         }
-      }
-    };
+        if (rendererRef.current) {
+          rendererRef.current.dispose();
+          if (containerRef.current && rendererRef.current.domElement) {
+            containerRef.current.removeChild(rendererRef.current.domElement);
+          }
+        }
+      };
+    } catch (error) {
+      console.error('Error initializing GalaxyScene:', error);
+      setHasWebGL(false);
+    }
   }, [scrollProgress]);
+
+  if (!hasWebGL) {
+    return (
+      <div className="fixed top-0 left-0 w-full h-full -z-10 bg-black">
+        <div className="absolute inset-0 overflow-hidden">
+          {[...Array(200)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full bg-white"
+              style={{
+                width: `${Math.random() * 3 + 1}px`,
+                height: `${Math.random() * 3 + 1}px`,
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                opacity: Math.random() * 0.8 + 0.2,
+                animation: `twinkle ${Math.random() * 3 + 2}s ease-in-out infinite`,
+              }}
+            />
+          ))}
+        </div>
+        <style>{`
+          @keyframes twinkle {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1; }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   return <div ref={containerRef} className="fixed top-0 left-0 w-full h-full -z-10" />;
 };
